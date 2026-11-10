@@ -1,0 +1,63 @@
+# zero7.com.br/live — página de redirecionamento para a live no YouTube
+
+Options -Indexes
+DirectoryIndex index.html
+
+# /live (sem barra) -> 301 para /live/ — o mod_dir preserva a query string
+# (as UTMs chegam intactas).
+DirectorySlash On
+
+# Bloqueia .git e qualquer arquivo/pasta oculta (exceto .well-known)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule (^|/)\.(?!well-known/) - [F,L]
+</IfModule>
+<IfModule !mod_rewrite.c>
+  RedirectMatch 404 /\.(?!well-known/)
+</IfModule>
+<FilesMatch "^\.">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+# Arquivos do repositório que não precisam ser públicos
+<FilesMatch "^(README\.md)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+AddType font/woff2 .woff2
+
+# Cache: HTML curto (troca rápido se a live mudar), imagens/fonte longo
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 5 minutes"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=300, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(png|jpe?g|webp|svg|ico|woff2)$">
+    Header set Cache-Control "public, max-age=31536000"
+  </FilesMatch>
+</IfModule>
